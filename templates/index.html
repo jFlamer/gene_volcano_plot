@@ -3,9 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Gene Volcano Plot</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
     <h1>Volcano Plot</h1>
-    <img src="/plot" alt="Plot">
+<!--    <img src="/plot" alt="Plot">-->
+    <div id="volcano-plot"></div>
+    <div id="boxplot"></div>
+
+    <script>
+        var plotData = JSON.parse('{{ plot_json | safe }}');
+        Plotly.newPlot('volcano-plot', plotData)
+
+        var plot = document.getElementById('volcano-plot');
+        plot.on('plotly-click', function(data){
+            var geneId = data.points[0].text;
+            fetch(`/boxplot/${geneId}`).then(response => response.json()).then(boxplotData => Plotly.newPlot('boxplot', boxplotData)).catch(error => console.error('Error fetching boxplot data:', error));
+        });
+    </script>
 </body>
 </html>
