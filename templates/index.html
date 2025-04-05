@@ -15,7 +15,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             var plotData = JSON.parse('{{ plot_json | safe }}')
-            Plotly.newPlot('volcano-plot', plotData).then(function (plot) {
+            Plotly.newPlot('volcano-plot', plotData).then(function () {
                 document.getElementById('volcano-plot').on('plotly_click', function (data) {
                     var geneID = data.points[0].text;
                     var gene_symbol = data.points[0].text;

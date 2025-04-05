@@ -1,14 +1,11 @@
-import io
 import json
 
 import matplotlib
 import numpy as np
 import pandas as pd
 import plotly
-from flask import Flask, render_template, send_file, jsonify
-from matplotlib import pyplot as plt
+from flask import Flask, render_template, jsonify
 import plotly.graph_objects as go
-from matplotlib.pyplot import title
 from pip._vendor import requests
 from plotly.graph_objs import Figure
 from plotly.subplots import make_subplots
@@ -34,9 +31,14 @@ def create_plot():
 
         plot: Figure = go.Figure()
 
-        plot.add_trace(go.Scatter(x=df["logFC"], y=-np.log10(df["adj.P.Val"]), mode='markers', marker=dict(color=-np.log10(df['adj.P.Val']), colorscale='Plotly3', size=9, opacity=0.8), text=df['EntrezGeneSymbol'], customdata=df['EntrezGeneSymbol'], hoverinfo='text', name='Volcano Plot'))
+        plot.add_trace(go.Scatter(x=df["logFC"], y=-np.log10(df["adj.P.Val"]),
+                                  mode='markers', marker=dict(color=-np.log10(df['adj.P.Val']),
+                                  colorscale='Plotly3', size=9, opacity=0.8),
+                                  text=df['EntrezGeneSymbol'], customdata=df['EntrezGeneSymbol'],
+                                  hoverinfo='text', name='Volcano Plot'))
 
-        plot.update_layout(title="Volcano Plot", xaxis_title="Logarithmic Fold Change (logFC)", yaxis_title="Adjusted P Value", clickmode='event+select')
+        plot.update_layout(title="Volcano Plot", xaxis_title="Logarithmic Fold Change (logFC)",
+                           yaxis_title="Adjusted P Value", clickmode='event+select')
 
         plot_json = json.dumps(plot, cls=plotly.utils.PlotlyJSONEncoder)
 
@@ -61,18 +63,21 @@ def boxplot(gene_id):
 
     plot = make_subplots(rows=1, cols=1)
 
-    plot.add_trace(go.Box(y = young_dons_data, name = "Young Donors", boxmean='sd', marker = dict(color = 'pink'), jitter = 0.3, pointpos= -1.8), row=1, col=1)
-    plot.add_trace(go.Box(y = old_dons_data, name = "Old Donors", boxmean='sd', marker = dict(color = 'purple'), jitter = 0.3, pointpos= -1.8), row=1, col=1)
+    plot.add_trace(go.Box(y = young_dons_data, name = "Young Donors", boxmean='sd',
+                          marker = dict(color = 'pink'), jitter = 0.3, pointpos= -1.8), row=1, col=1)
+    plot.add_trace(go.Box(y = old_dons_data, name = "Old Donors", boxmean='sd',
+                          marker = dict(color = 'purple'), jitter = 0.3, pointpos= -1.8), row=1, col=1)
 
-    plot.update_layout(title=f"Protein Concentration Comparison for Gene {gene_id}", xaxis_title="Donor Age", yaxis_title = "Protein concentration", showlegend= True)
+    plot.update_layout(title=f"Protein Concentration Comparison for Gene {gene_id}", xaxis_title="Donor Age",
+                       yaxis_title = "Protein concentration", showlegend= True)
 
     return plot.to_json()
 
 @app.route('/gene-info/<gene_symbol>', methods=['GET'])
 def get_gene_info(gene_symbol):
     try:
-        g_url = f"https://mygene.info/v3/query?q=symbol:{gene_symbol}&species=human"
-        response = requests.get(g_url)
+        url = f"https://mygene.info/v3/query?q=symbol:{gene_symbol}&species=human"
+        response = requests.get(url)
         response.raise_for_status()
         data = response.json().get('hits', [])
 
@@ -86,24 +91,24 @@ def get_gene_info(gene_symbol):
         gene_response.raise_for_status()
         gene_data = gene_response.json()
 
-        gen_info = gene_data.get('generif', [])
+        gen_public_info = gene_data.get('generif', [])
         publications = []
 
-        for item in gen_info:
-            id = item.get('pubmed')
+        for item in gen_public_info:
+            publication_id = item.get('pubmed')
             title = item.get('text', 'No text available')
-            if id:
+            if publication_id:
                 publications.append({
                     "title": title,
-                    "url": f"https://pubmed.ncbi.nlm.nih.gov/{id}"
+                    "url": f"https://pubmed.ncbi.nlm.nih.gov/{publication_id}"
                 })
 
-        pubs = {}
-        pubs["gene_symbol"] = gene_symbol
-        pubs["gene_id"] = gene_id
-        pubs["publications"] = publications
+        publications_info = {}
+        publications_info["gene_symbol"] = gene_symbol
+        publications_info["gene_id"] = gene_id
+        publications_info["publications"] = publications
 
-        return jsonify(pubs)
+        return jsonify(publications_info)
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
