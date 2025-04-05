@@ -32,8 +32,9 @@
 
         function findGenePubs(gene) {
             fetch(`gene-info/${gene}`).then(res => res.json()).then(data => {
-                if (data.pubmed_url) {
-                    let html_links = data.pubmed_url.map(link => `<li><a href="${link}" target="_blank">${link}</a></li>`).join('');
+                if (data.publications) {
+                    let html_links = data.publications.map(link =>
+                        `<li><a href="${link.url }" target="_blank">${link.title}</a></li>`).join('');
                     document.getElementById('gene-info').innerHTML = `<h3> Gene ${gene} - Publications</h3><ul>${html_links}</ul>`;
                 } else {
                     document.getElementById('gene-info').innerHTML = `<p>No pubMed publications found on gene {gene}$</p>`

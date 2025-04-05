@@ -87,20 +87,21 @@ def get_gene_info(gene_symbol):
         gene_data = gene_response.json()
 
         gen_info = gene_data.get('generif', [])
-        pm_ids = []
         publications = []
 
         for item in gen_info:
             id = item.get('pubmed')
-            title = item.get('title', 'No text available')
+            title = item.get('text', 'No text available')
             if id:
-                pm_ids.append(id)
-        pubmed_url = [f"https://pubmed.ncbi.nlm.nih.gov/{pid}" for pid in pm_ids]
+                publications.append({
+                    "title": title,
+                    "url": f"https://pubmed.ncbi.nlm.nih.gov/{id}"
+                })
 
         pubs = {}
         pubs["gene_symbol"] = gene_symbol
         pubs["gene_id"] = gene_id
-        pubs["pubmed_url"] = pubmed_url
+        pubs["publications"] = publications
 
         return jsonify(pubs)
 
