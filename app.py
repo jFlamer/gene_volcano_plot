@@ -9,6 +9,7 @@ from flask import Flask, render_template, send_file, jsonify
 from matplotlib import pyplot as plt
 import plotly.graph_objects as go
 from matplotlib.pyplot import title
+from pip._vendor import requests
 from plotly.graph_objs import Figure
 from plotly.subplots import make_subplots
 
@@ -66,6 +67,46 @@ def boxplot(gene_id):
     plot.update_layout(title=f"Protein Concentration Comparison for Gene {gene_id}", xaxis_title="Donor Age", yaxis_title = "Protein concentration", showlegend= True)
 
     return plot.to_json()
+
+@app.route('/gene-info/<gene_symbol>', methods=['GET'])
+def get_gene_info(gene_symbol):
+    try:
+        g_url = f"https://mygene.info/v3/query?q=symbol:{gene_symbol}&species=human"
+        response = requests.get(g_url)
+        response.raise_for_status()
+        data = response.json().get('hits', [])
+
+        if not data:
+            return jsonify({'error': 'No results found'}), 404
+
+        gene_id = data[0].get('_id')
+
+        gene_url = f"https://mygene.info/v3/gene/{gene_id}"
+        gene_response = requests.get(gene_url)
+        gene_response.raise_for_status()
+        gene_data = gene_response.json()
+
+        gen_info = gene_data.get('generif', [])
+        pm_ids = []
+        publications = []
+
+        for item in gen_info:
+            id = item.get('pubmed')
+            title = item.get('title', 'No text available')
+            if id:
+                pm_ids.append(id)
+        pubmed_url = [f"https://pubmed.ncbi.nlm.nih.gov/{pid}" for pid in pm_ids]
+
+        pubs = {}
+        pubs["gene_symbol"] = gene_symbol
+        pubs["gene_id"] = gene_id
+        pubs["pubmed_url"] = pubmed_url
+
+        return jsonify(pubs)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/')
 def home():
